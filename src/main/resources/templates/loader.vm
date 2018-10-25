@@ -1,0 +1,117 @@
+<html>
+<head>
+
+<script type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
+</head>
+
+<body>
+	<form id="form1" method="post" enctype="multipart/form-data">
+		<br>
+		选择jar文件
+		<input id="file" name="files" type="file" multiple="multiple"> 
+		<input type="submit" value="上传">
+		<input type="button" value="清空" class="clear-form">
+		<br>
+	</form>
+	#if($fileVos.size() > 0)
+	<table border="1">
+		<tr>
+			<th>jar文件</th> 
+			<th><a href="#_" class="select-table" name="show-table" reset="true">类个数</a></th> 
+			<th>加载成功</th> 
+			<th><a href="#_" class="select-table" name="show-table" >未知</a></th> 
+			<th><a href="#_" class="select-table" name="show-table" >接口</a></th> 
+			<th><a href="#_" class="select-table" name="show-table" >虚类</a></th> 
+			<th><a href="#_" class="select-table" name="show-table" >类</a></th> 
+			<th><a href="#_" class="select-table" name="show-table" >注解</a></th> 
+		</tr>
+	#foreach($fileVo in $fileVos)
+		<tr>
+			<td>${fileVo.fileName}</td> 
+			<td>${fileVo.count}</td> 
+			<td>${fileVo.succ}</td> 
+			<td>${fileVo.fail}</td> 
+			<td>${fileVo.interfaceCnt}</td> 
+			<td>${fileVo.abstractCnt}</td> 
+			<td>${fileVo.classCnt}</td> 
+			<td>${fileVo.annotationCnt}</td> 
+		</tr>
+	#end
+	</table>
+	#end
+	#if($classTableVos.size() > 0)
+	<form method="post" action="/chart/index">
+		详情：<input type="submit" class="plot-table" value="拓扑">
+		<table border="1">
+			<tr>
+				<th>类名</th> 
+				<th>引用</th> 
+				<th>被引用</th> 
+				<th>类型</th> 
+				<th>全选<input type="checkbox"  class="check-table" name="*"></th> 
+			</tr>
+		#foreach($classTableVo in $classTableVos)
+			<tr>
+				<td><label id="className"><a href="/chart/index?className=${classTableVo.className}">${classTableVo.className}</a></label></td>
+				<td><label id="className">${classTableVo.getters}</label></td>
+				<td><label id="className">${classTableVo.toGetters}</label></td>
+				<td><label id="className" class="show-table">${classTableVo.type}</label></td>
+				<td><input type="checkbox" class="check-table"  name="className" value="${classTableVo.className}"></td>
+			</tr>
+		#end
+		</table>
+	</form>
+	#end
+<script type="text/javascript">
+	$(function(){
+		$('.item-delete').click(function(){
+			var tr = $(this).parents('tr');
+			tr.remove();
+			var className = $('#className', tr).html();
+			$.post("/loader/delClass", {className:className}, function(json){
+				var data = $.parseJSON(json);
+				if(data.status == 1){
+					var num = $('#cnt').html();
+					$('#cnt').html(parseInt(num)-1);
+				}
+			});
+		});
+		$('.clear-form').click(function(){
+			$.post("/loader/clear", function(json){
+				var data = $.parseJSON(json);
+				if(data.status == 1){
+					location.href="/loader/index";
+				}else{
+					alert("删除失败")
+				}
+			});
+		});
+		$('.select-table').click(function(){
+			var show = $(this).attr("name");
+			if($(this).attr("reset") != undefined){
+				$('.' + show).each(function(){
+					$(this).parents('tr').show();
+				});
+			}else{
+				var type = $(this).html();
+				$('.' + show).each(function(){
+					if($(this).html() != type){
+						$(this).parents('tr').hide();
+					}else{
+						$(this).parents('tr').show();
+					}
+				});
+			}
+			//alert(type);
+		});
+		$('.check-table[name="*"]').click(function(){
+			if($(this).attr("checked")){
+				$('.check-table[name!="*"]').attr("checked", true);
+			}else{
+				$('.check-table[name!="*"]').attr("checked", false);
+			}
+		});
+	});
+</script>
+</body>
+</html>

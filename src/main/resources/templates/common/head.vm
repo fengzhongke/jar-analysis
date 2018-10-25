@@ -1,0 +1,32 @@
+<%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8"%>
+<%@ include file="url.jsp" %>
+<script type="text/javascript">
+    $(function(){
+    	$(".navbar-nav li").click(function(){
+            $(this).attr("class", "active");
+    	});
+    });
+</script>
+<div class="navbar navbar-inverse navbar-fixed-top" role="banner">
+	<div class="container">
+		<form class="form-inline" role="form">
+			<a class="navbar-brand" href="http://alidb.alibaba-inc.com/">首页 </a>
+			<ul class="nav navbar-nav">
+				<li><a href="${confs_list }">脚本</a></li>
+				<li><a href="${jobs_list }">任务</a></li>
+                <li><a href="${reses_list }">资源</a></li>
+                <li><a href="${dashboard }">结果</a></li>
+			</ul>
+		</form>
+        <div class="btn btn-link btn-sm pull-right" style="color: rgb(212, 106, 64);">
+            <span class="glyphicon glyphicon-user"></span>${cuser.uname } 您好！
+        </div>
+	</div>
+</div>
+<br>
+<br><br>
+
+<style type="text/css">
+	table  th {white-space:nowrap;}
+	table  td {white-space:nowrap;}
+</style>

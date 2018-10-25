@@ -1,0 +1,182 @@
+
+<html>
+<head>
+
+<script type="text/javascript" src="/js/raphael-min.js"></script>
+<script type="text/javascript" src="/js/dracula_graffle.js"></script>
+<script type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
+<script type="text/javascript" src="/js/dracula_graph.js"></script>
+</head>
+<script>
+	var redraw, g, renderer;
+	var max_x=0;
+	var max_y=0;
+	window.onload = function() {
+		g = new Graph();
+		var rect_height = 20;
+		var rect_width = 100;
+		var off_width = 150;
+		var off_height = 30;
+		
+		var getAttr = function(r, x, y, width, height, main, attrs){
+			var rect = r.set();
+			var main_width = width * 3 + 6;
+			var main_height = (height + 2) * (attrs.length + 1) + 2;
+			rect.push(r.rect(x, y, main_width, main_height).attr({ "fill":"EFF", r:"5px", "stroke-width":"1px"}));
+			var main_rect = r.rect(x+2, y+2, width, height).attr({ "fill":"EFF", r:"1px", "stroke-width":"1px"})
+			var main_text = r.text(x+4, y+2 + height/2, main.name).attr({"font-size": 10, 'text-anchor': 'start'})
+			var exclude_rect = r.rect(x+4+width, y+2, width*2, height).attr({ "fill":"EFF", r:"1px", "stroke-width":"1px"})
+			var exclude_text = r.text(x+6 + width, y+2 + height/2, '删除').attr({"font-size": 10, 'text-anchor': 'start'})
+			main_text.attr("cursor", "pointer");
+			exclude_text.attr("cursor", "pointer");
+			main_text.mousedown(function(){
+				location.href='/chart/index?className=' + main.className;
+			});
+			exclude_text.mousedown(function(){
+				exclude(main.className);
+			});
+			rect.push(main_rect);
+			rect.push(main_text);
+			rect.push(exclude_rect);
+			rect.push(exclude_text);
+			
+			for(var i=0;i<attrs.length; i++){
+				var type_rect = r.rect(x+2, y+2 + (height+2)*(i+1), width, height).attr({ "fill":"EFF", r:"1px", "stroke-width":"1px"});
+				var type_text = r.text(x+4, y+2 + (height+2)*(i+1) + height/2, attrs[i].type).attr({"font-size": 10, 'text-anchor': 'start'});
+				if(attrs[i].contains){
+					var subClassName = attrs[i].className;
+					type_text.attr("cursor", "pointer");
+					type_text.mousedown(function(){
+						location.href='/chart/index?className=' + subClassName;
+					});
+				}
+				var name_rect = r.rect(x+4+width, y+2 + (height+2)*(i+1), width*2, height).attr({ "fill":"EFF", r:"1px", "stroke-width":"1px"});
+				var name_text = r.text(x+6 + width, y+2 + (height+2)*(i+1) + height/2, attrs[i].name).attr({"font-size": 10, 'text-anchor': 'start'});
+				
+				rect.push(type_rect);
+				rect.push(type_text);
+				rect.push(name_rect);
+				rect.push(name_text);
+			}
+			return rect;
+		}
+
+		var render = function(r, n) {
+			n.point[0] = parseInt(n.x * off_width - off_width / 2);
+			n.point[1] = parseInt(n.y * off_height - off_height / 2);
+			var set = r.set();
+			var rect  = r.rect(n.point[0], n.point[1], rect_width, rect_height).attr({ "fill":n.c, r:"5px", "stroke-width":"1px"});
+			var text = r.text(n.point[0] + 2, n.point[1] + rect_height / 2, (n.label || n.id)).attr({"font-size": 10, 'text-anchor': 'start'});
+			rect.attr('stroke-dasharray', '- ');
+			set.push(rect);
+			set.push(text);
+			var sub = null;
+
+			set.hover(function(){
+				if(sub == null){
+					sub = getAttr(r, n.point[0], n.point[1], rect_width, rect_height, n.main, n.attrs);
+					set.sub = sub;
+					sub.hover(function(){
+						sub.show();
+					});
+					sub.mouseout(function(){
+						sub.hide();
+					});
+				}
+				sub.toFront();
+				sub.show();
+			});
+			set.mouseout(function(){
+				sub.hide();
+			});
+			
+			if(max_x < n.x || max_y < n.y){
+				max_x = max_x > n.x ? max_x : n.x;
+				max_y = max_y > n.y ? max_y : n.y;
+				$('svg').width(max_x*off_width + off_width*2);
+				$('svg').height(max_y*off_height + off_height*100);
+			}
+			return set;
+		};
+		#foreach($classVo in $classVos)
+			g.addNode('$classVo.name', {
+				x:$classVo.x, 
+				y:$classVo.y, 
+				c:'$classVo.color',
+				full:'$classVo.name', 
+				render: render, 
+				main:{
+					"name":"$classVo.name",
+					"className":"$classVo.className"
+				},
+				attrs:[
+				#foreach($attr in $classVo.attrs)
+					{
+						"name":"$!attr.name",
+						"type":"$!attr.type",
+						"className":"$!attr.className",
+						"contains":$attr.contains
+					},
+				#end
+				]
+			})
+		#end
+		#foreach($relate in $relateVos)
+			g.addEdge('$relate.to', '$relate.from', {stroke : '$relate.color', fill : '$relate.color|2', dash:'',directed : true})
+		#end
+
+		var layouter = new Graph.Layout.Spring(g);
+		renderer = new Graph.Renderer.Raphael('canvas', g, $(document).width(), $(document).height());
+		redraw = function() {
+			layouter.layout();
+			renderer.draw();
+		};
+
+		hide = function(id) {
+			g.nodes[id].hide();
+		};
+		show = function(id) {
+			g.nodes[id].show();
+		};
+	};
+	var exclude = function(name){
+		var form = $('form[name=exclude]');
+		var input = $('<input type="text" name="exclude"/>');
+		input.val(name);
+		form.append(input);
+		form.submit();
+	}
+	$('.chart-reset').click(function(){
+		var form = $('form[name=exclude]');
+		alert("ttt");
+		$('input[name=exclude]', form).remove();
+		
+		form.submit();
+	});
+</script>
+<body>
+	<a href="/loader/index">返回</a>
+	<a href="#_" class="chart-reset">重置</a>
+	<div id="svg" style="width:100%;height:100%;overflow:scroll;"><div id="canvas"></div></div>
+	<div style="display:none">
+		<form name="exclude" method="post">
+			#foreach($name in $!className)
+				<input name="className" value="$!name">
+			#end
+			#foreach($name in $!exclude)
+				<input name="exclude" value="$!name">
+			#end
+		</form>
+	</div>
+
+<script>
+	$('.chart-reset').click(function(){
+		var form = $('form[name=exclude]');
+		alert("ttt");
+		$('input[name=exclude]', form).remove();
+		
+		form.submit();
+	});
+</script>
+</body>
+</html>

@@ -21,13 +21,13 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class SessionClassService {
 
-	private BeanContainer container;
-	private final FileClassLoader loader;
+	private ClassContainer container;
+	private final JarClassLoader loader;
 
-	public SessionClassService(FileClassLoader loader) {
+	public SessionClassService(JarClassLoader loader) {
 		this.loader = loader;
 		try {
-			this.container = (BeanContainer) loader.getContainer().clone();
+			this.container = (ClassContainer) loader.getContainer().clone();
 		} catch (CloneNotSupportedException e) {
 			e.printStackTrace();
 		}

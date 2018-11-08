@@ -7,14 +7,12 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import com.ali.analysis.support.FileClassLoader;
+import com.ali.analysis.support.InvokeLoader;
+import com.ali.analysis.support.JarClassLoader;
 import com.ali.analysis.support.SessionClassService;
+import com.ali.analysis.support.SessionInvokeService;
 
 public class WebUtils {
-
-	private static final String LOADER = "loader";
-	private static final String SERVICE = "service";
-
 	private static HttpSession getSession() {
 		RequestAttributes requestAttr = RequestContextHolder.getRequestAttributes();
 		HttpServletRequest request = ((ServletRequestAttributes) requestAttr).getRequest();
@@ -22,31 +20,41 @@ public class WebUtils {
 		return session;
 	}
 
-	public static FileClassLoader getLoader() {
+	public static <T> T getLoader(Class<T> loaderClass) throws Exception {
 		HttpSession session = getSession();
-		FileClassLoader loader = (FileClassLoader) session.getAttribute(LOADER);
+		String name = loaderClass.getName();
+		@SuppressWarnings("unchecked")
+		T loader = (T) session.getAttribute(name);
 		if (loader == null) {
-			session.setAttribute(LOADER, loader = new FileClassLoader());
+			session.setAttribute(name, loader = loaderClass.newInstance());
 		}
 		return loader;
 	}
 
-	public static SessionClassService getService() {
+	public static <T> void resetLoader(Class<T> loaderClass) {
+		getSession().removeAttribute(loaderClass.getName());
+	}
+
+	public static SessionClassService getClassService() throws Exception {
 		HttpSession session = getSession();
-		SessionClassService sevice = (SessionClassService) session.getAttribute(SERVICE);
-		FileClassLoader loader = getLoader();
+		String name = SessionClassService.class.getName();
+		SessionClassService sevice = (SessionClassService) session.getAttribute(name);
+		JarClassLoader loader = getLoader(JarClassLoader.class);
 		if (sevice == null || sevice.getLoader() != loader) {
-			session.setAttribute(SERVICE, sevice = new SessionClassService(loader));
+			session.setAttribute(name, sevice = new SessionClassService(loader));
 		}
 		return sevice;
 	}
 
-	public static void resetLoader() {
-		getSession().removeAttribute(LOADER);
-	}
-
-	public static void resetService() {
-		getSession().removeAttribute(SERVICE);
+	public static SessionInvokeService getInvokeService() throws Exception {
+		HttpSession session = getSession();
+		String name = SessionInvokeService.class.getName();
+		SessionInvokeService sevice = (SessionInvokeService) session.getAttribute(name);
+		InvokeLoader loader = getLoader(InvokeLoader.class);
+		if (sevice == null || sevice.getLoader() != loader) {
+			session.setAttribute(name, sevice = new SessionInvokeService(loader));
+		}
+		return sevice;
 	}
 
 }

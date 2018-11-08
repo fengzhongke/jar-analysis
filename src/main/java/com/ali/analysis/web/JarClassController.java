@@ -21,34 +21,33 @@ import com.ali.analysis.model.ClassBean;
 import com.ali.analysis.model.FileBean;
 import com.ali.analysis.model.vo.ClassTableVO;
 import com.ali.analysis.model.vo.FileTableVO;
-import com.ali.analysis.support.FileClassLoader;
+import com.ali.analysis.support.JarClassLoader;
 import com.ali.analysis.support.SessionClassService;
 import com.ali.analysis.util.WebUtils;
 import com.alibaba.fastjson.JSONObject;
 
 @Controller
 @RequestMapping("loader")
-public class LoaderController {
+public class JarClassController {
 
 	@RequestMapping("index")
-	public String index(Model model, HttpServletRequest request) {
+	public String index(Model model, HttpServletRequest request) throws Exception {
 		CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver(
 				request.getSession().getServletContext());
-		FileClassLoader loader = WebUtils.getLoader();
 		if (multipartResolver.isMultipart(request)) {
 			MultipartHttpServletRequest multiRequest = (MultipartHttpServletRequest) request;
 			List<MultipartFile> files = multiRequest.getFiles("files");
+			JarClassLoader loader = WebUtils.getLoader(JarClassLoader.class);
 			for (MultipartFile file : files) {
 				try {
 					loader.loadSource(file.getOriginalFilename(), file.getInputStream());
-					WebUtils.resetService();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 
-		SessionClassService service = WebUtils.getService();
+		SessionClassService service = WebUtils.getClassService();
 		List<FileTableVO> fileVos = new ArrayList<FileTableVO>();
 		Map<String, FileBean> fileBeans = service.getContainer().getFileBeans();
 		for (Entry<String, FileBean> entry : fileBeans.entrySet()) {
@@ -61,7 +60,8 @@ public class LoaderController {
 			int classCnt = fileBean.getTypeCnt(ClassType.CLASS);
 			int annotationCnt = fileBean.getTypeCnt(ClassType.ANNOTATION);
 
-			fileVos.add(new FileTableVO(fileName, succ, fail, succ + fail, interfaceCnt, abstractCnt, classCnt, annotationCnt));
+			fileVos.add(new FileTableVO(fileName, succ, fail, succ + fail, interfaceCnt, abstractCnt, classCnt,
+					annotationCnt));
 		}
 		Map<String, ClassBean> classBeans = service.getContainer().getClassBeans();
 		List<ClassTableVO> classTableVos = new ArrayList<ClassTableVO>();
@@ -75,16 +75,15 @@ public class LoaderController {
 		model.addAttribute("fileVos", fileVos);
 		model.addAttribute("classTableVos", classTableVos);
 
-		return "loader";
+		return "class";
 	}
-	
 
 	@ResponseBody
 	@RequestMapping("clear")
 	public String clear() {
 		JSONObject json = new JSONObject();
 		try {
-			WebUtils.resetLoader();
+			WebUtils.resetLoader(JarClassLoader.class);
 			json.put("status", 1);
 		} catch (Exception e) {
 			json.put("status", -1);

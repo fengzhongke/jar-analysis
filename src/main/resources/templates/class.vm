@@ -64,18 +64,6 @@
 	#end
 <script type="text/javascript">
 	$(function(){
-		$('.item-delete').click(function(){
-			var tr = $(this).parents('tr');
-			tr.remove();
-			var className = $('#className', tr).html();
-			$.post("/loader/delClass", {className:className}, function(json){
-				var data = $.parseJSON(json);
-				if(data.status == 1){
-					var num = $('#cnt').html();
-					$('#cnt').html(parseInt(num)-1);
-				}
-			});
-		});
 		$('.clear-form').click(function(){
 			$.post("/loader/clear", function(json){
 				var data = $.parseJSON(json);

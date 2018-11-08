@@ -25,13 +25,13 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class FileClassLoader extends ClassLoader {
+public class JarClassLoader extends ClassLoader {
 
 	private final Logger LOGGER = LoggerFactory.getLogger(getClass());
-	private BeanContainer container = new BeanContainer();
+	private ClassContainer container = new ClassContainer();
 
-	public FileClassLoader() {
-		super(FileClassLoader.class.getClassLoader().getParent());
+	public JarClassLoader() {
+		super(JarClassLoader.class.getClassLoader().getParent());
 	}
 
 	/**

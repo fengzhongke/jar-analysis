@@ -45,8 +45,8 @@ public class ChartController {
 
 	@RequestMapping("index")
 	public String hirachy(Model model, @RequestParam(value = "className") String[] classNames,
-			@RequestParam(value = "exclude", required = false) String[] excludes) {
-		SessionClassService classService = WebUtils.getService();
+			@RequestParam(value = "exclude", required = false) String[] excludes) throws Exception {
+		SessionClassService classService = WebUtils.getClassService();
 		try {
 			model.addAttribute("className", classNames);
 			model.addAttribute("exclude", excludes);
@@ -54,54 +54,51 @@ public class ChartController {
 			if (excludes != null) {
 				excludeNames.addAll(Arrays.asList(excludes));
 			}
-			
-			
+
 			Map<String, RelateTreeNode> treeNodes = classService.getTree(Arrays.asList(classNames));
 			List<RelatePlot> relates = classService.getRelates(treeNodes);
 			Iterator<Entry<String, RelateTreeNode>> itr = treeNodes.entrySet().iterator();
-			while(itr.hasNext()){
+			while (itr.hasNext()) {
 				if (excludeNames.contains(itr.next().getKey())) {
 					itr.remove();
 				}
 			}
-			
+
 			List<ClassPlot> plots = classService.getPlot(treeNodes);
 			List<RelateVO> relateVos = new ArrayList<RelateVO>();
 
 			List<ClassVO> classVos = new ArrayList<ClassVO>();
-
 
 			for (RelatePlot relate : relates) {
 				Class<?> fromClazz = relate.getFromBean().getBean().getClazz();
 				Class<?> toClazz = relate.getToBean().getBean().getClazz();
 
 				if (!excludeNames.contains(fromClazz.getName()) && !excludeNames.contains(toClazz.getName())) {
-					relateVos.add(new RelateVO(GET_CLASS_NAME.apply(fromClazz), GET_CLASS_NAME.apply(toClazz), "#56f"));
+					relateVos.add(new RelateVO(GET_CLASS_NAME.apply(fromClazz), GET_CLASS_NAME.apply(toClazz), "#56f", ""));
 				}
 			}
 			for (ClassPlot plot : plots) {
 				Class<?> clazz = plot.getNode().getBean().getClazz();
-					ClassBean bean = plot.getNode().getBean();
-					String color = ClassTypeColor.getColor(bean.getType()).getColor();
+				ClassBean bean = plot.getNode().getBean();
+				String color = ClassTypeColor.getColor(bean.getType()).getColor();
 
-					List<AttrVO> attrVos = new ArrayList<AttrVO>();
-					for (AttrBean attr : bean.getATTRS()) {
-						String className = attr.getType().getName();
-						boolean contains = classService.getContainer().getByCName(className) != null;
-						attrVos.add(new AttrVO(attr.getName(), GET_CLASS_NAME.apply(attr.getType()), "#56f", contains,
-								className));
-					}
+				List<AttrVO> attrVos = new ArrayList<AttrVO>();
+				for (AttrBean attr : bean.getATTRS()) {
+					String className = attr.getType().getName();
+					boolean contains = classService.getContainer().getByCName(className) != null;
+					attrVos.add(new AttrVO(attr.getName(), GET_CLASS_NAME.apply(attr.getType()), "#56f", contains,
+							className));
+				}
 
-					classVos.add(new ClassVO(GET_CLASS_NAME.apply(clazz), clazz.getName(), plot.getXOffset(),
-							plot.getYOffset(), color, attrVos));
+				classVos.add(new ClassVO(GET_CLASS_NAME.apply(clazz), clazz.getName(), plot.getXOffset(),
+						plot.getYOffset(), color, attrVos));
 			}
 			model.addAttribute("relateVos", relateVos);
 			model.addAttribute("classVos", classVos);
 
-		}catch(
-
-	Throwable e)
-	{
+		} catch (Throwable e) {
 			e.printStackTrace();
-		}return"hirachy";
-}}
+		}
+		return "class-plot";
+	}
+}

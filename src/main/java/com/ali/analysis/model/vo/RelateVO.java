@@ -10,4 +10,5 @@ public class RelateVO {
 	private String from;
 	private String to;
 	private String color;
+	private String label;
 }

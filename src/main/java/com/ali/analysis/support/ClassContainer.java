@@ -9,7 +9,7 @@ import com.ali.analysis.model.FileBean;
 import lombok.Data;
 
 @Data
-public class BeanContainer implements Cloneable {
+public class ClassContainer implements Cloneable {
 
 	protected Map<String, ClassBean> classBeans = new HashMap<String, ClassBean>();
 	protected Map<String, FileBean> fileBeans = new HashMap<String, FileBean>();
@@ -24,7 +24,7 @@ public class BeanContainer implements Cloneable {
 
 	@Override
 	public Object clone() throws CloneNotSupportedException {
-		BeanContainer obj =  (BeanContainer)super.clone();
+		ClassContainer obj =  (ClassContainer)super.clone();
 		obj.classBeans.putAll(classBeans);
 		obj.fileBeans.putAll(fileBeans);
 		return obj;
